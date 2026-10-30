@@ -1,0 +1,45 @@
+name: Release JS Packages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/sdk/**" # Trigger only changes in packages
+      - ".github/workflows/release-js-package.yml"
+
+permissions:
+  id-token: write # Required for OIDC
+  contents: read
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/sdk
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js 22.23.4
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.4
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.11.0
+
+      - name: Update npm for OIDC support
+        run: npm install -g npm@11.6.2
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Publish
+        run: pnpm publish-sdk
